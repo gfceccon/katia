@@ -10,5 +10,5 @@ export namespace AppointmentDatabase {
   export const load = async (
     date: string
   ): Promise<Low<Type>> =>
-    loadDatabase<Type>(date, { appointments: [] });
+    loadDatabase<Type>(`${date}.json`, { appointments: [] });
 }

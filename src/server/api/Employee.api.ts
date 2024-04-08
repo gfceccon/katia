@@ -35,9 +35,29 @@ export namespace EmployeeApi {
       }
 
       db.update(({ employees }) => employees.push(employee));
-      res.json(db.data.employees);
+      res.status(200).json(db.data.employees).end();
     });
-    
+
+    router.get("/:id", async (req, res) => {
+      const id = req.params.id;
+      const db = await database;
+
+      if (!id) {
+        res.status(500).json({ error: "ID not specified" }).end();
+        return;
+      }
+
+      if (db) {
+        const databaseEmployee = db.data.employees.find(
+          (employee) => employee.id == id
+        );
+        if (databaseEmployee) res.status(200).json(databaseEmployee).end();
+        else res.status(404).json({ error: "Employee not found" }).end();
+      } else {
+        res.status(500).json({ error: "Database not loaded" }).end();
+      }
+    });
+
     router.put("/:id", async (req, res) => {
       const id = req.params.id;
       const db = await database;

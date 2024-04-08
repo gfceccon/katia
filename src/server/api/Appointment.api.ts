@@ -3,7 +3,6 @@ import { Appointment } from "../../core/Appointment.js";
 import { AppointmentDatabase } from "../database/Appointment.db.js";
 import { existsSync } from "fs";
 import { Low } from "lowdb";
-import { EmployeeDatabase } from "../database/Employee.db.js";
 import { EmployeeApi } from "./Employee.api.js";
 import { ClientApi } from "./Client.api.js";
 import { ServiceApi } from "./Service.api.js";
@@ -17,10 +16,10 @@ export namespace AppointmentApi {
 
       if (!validateDate(date, res)) return;
 
-      const appointments = await getDatabase(date, res);
+      const db = await getDatabase(date, res);
 
-      if (appointments) {
-        res.status(200).json(appointments).end();
+      if (db) {
+        res.status(200).json(db.data.appointments).end();
       }
     });
 
@@ -89,6 +88,35 @@ export namespace AppointmentApi {
       }
     });
 
+    router.get("/date/:date/employee/:id", async (req, res) => {
+      const id = req.params.id;
+      const date = req.params.date;
+
+      if (!id) {
+        res.status(500).json({ error: "Id not specified" }).end();
+        return;
+      }
+
+      if (!date) {
+        res.status(500).json({ error: "Date not specified" }).end();
+        return;
+      }
+
+      if (!validateDate(date, res)) return;
+
+      const db = await getDatabase(date, res);
+
+      if (!db) {
+        res.status(500).json({ error: "Database error" }).end();
+        return;
+      }
+
+      const appointments = db.data.appointments.filter(
+        (appointment) => appointment.employee.id == id
+      );
+      res.status(200).json(appointments).end();
+    });
+
     return router;
   };
 
@@ -98,15 +126,11 @@ export namespace AppointmentApi {
       return false;
     }
 
-    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    if (!date.trim().match(/^\d{4}-\d{2}-\d{2}$/)) {
       res.status(500).json({ error: "Date is invalid" }).end();
       return false;
     }
-
-    if (!existsSync(`${process.env.DB_PATH}/${date}.json`)) {
-      res.status(500).json({ error: "Date is invalid" }).end();
-      return false;
-    }
+    
     return true;
   };
 
